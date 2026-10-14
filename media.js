@@ -58,14 +58,16 @@
         const f = FIELDS[which];
         const kinds = new Set();
         if (!data) return kinds;
+        const isAudio = Boolean(data[f.audio] || data.isAudio || data.audioOnly || /beat|song|track/i.test(data.question || ''));
         if (data[f.image]) kinds.add('image');
-        if (data[f.audio]) kinds.add('audio');
-        if (data[f.video] || data[f.youtube]) kinds.add('video');
+        if (isAudio) kinds.add('audio');
+        if (data[f.video] || (data[f.youtube] && !isAudio)) kinds.add('video');
         if (data[f.embed]) kinds.add(/spotify|soundcloud|music/i.test(data[f.embed]) ? 'audio' : 'video');
         return kinds;
     }
 
     function isWide(data) {
+        if (!data || data.isAudio || data.audioOnly || /beat|song|track/i.test(data?.question || '')) return false;
         const q = kindsFor(data, 'question');
         const a = kindsFor(data, 'answer');
         return q.has('video') || a.has('video');
@@ -210,27 +212,291 @@
         }
     }
 
-    function buildYouTube(url, clip) {
+    function buildYouTube(url, clip, data, which, altText) {
         const id = youTubeId(url);
         if (!id) return errorNote(`Couldn't read YouTube link: ${url}`);
-        const params = new URLSearchParams({ rel: '0', modestbranding: '1', playsinline: '1' });
+        const params = new URLSearchParams({
+            rel: '0',
+            modestbranding: '1',
+            playsinline: '1',
+            autoplay: '1',
+            enablejsapi: '1'
+        });
+        const origin = (location.protocol === 'http:' || location.protocol === 'https:') ? location.origin : '';
+        if (origin) params.set('origin', origin);
+
         const start = toSeconds(clip.start);
         const end = toSeconds(clip.end);
         if (start) params.set('start', Math.floor(start));
         if (end) params.set('end', Math.ceil(end));
-        const wrap = el('div', 'media-embed');
-        const frame = el('div', 'video-frame');
-        const iframe = document.createElement('iframe');
-        iframe.src = `https://www.youtube-nocookie.com/embed/${id}?${params}`;
-        iframe.title = 'YouTube video';
-        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
-        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-        iframe.allowFullscreen = true;
-        frame.appendChild(iframe);
-        wrap.appendChild(frame);
+
+        const catName = document.getElementById('modalCategory')?.textContent || '';
+        const isAudioClue = Boolean(data && (data.isAudio || data.audioOnly || /sangeet/i.test(altText || '') || /sangeet/i.test(catName) || /beat|song|track/i.test(data.question || '')));
+
+        if (!isAudioClue) {
+            const wrap = el('div', 'media-embed');
+            const frame = el('div', 'video-frame');
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.youtube.com/embed/${id}?${params}`;
+            iframe.title = 'YouTube video';
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+            iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+            iframe.allowFullscreen = true;
+            frame.appendChild(iframe);
+            wrap.appendChild(frame);
+            if (location.protocol === 'file:') {
+                wrap.appendChild(errorNote('YouTube needs the game served over http — run: python3 -m http.server 8000', 'media-note'));
+            }
+            return wrap;
+        }
+
+        // Dedicated Diwali Music Beat Player for Sangeet clues
+        const wrap = el('div', 'yt-music-player');
+        wrap.dataset.state = 'buffering';
+        wrap.dataset.blind = 'true';
+
+        // Additional performance params to minimize iframe overhead
+        params.set('controls', '0');
+        params.set('fs', '0');
+        params.set('iv_load_policy', '3');
+        params.set('disablekb', '1');
+
+        const clipLength = (end > start) ? (end - start) : (end || 8);
+        const bars = Array.from({ length: 11 }, (_, i) => `<i style="--b:${i}"></i>`).join('');
+
+        wrap.innerHTML = `
+            <div class="yt-music-card">
+                <div class="yt-music-header">
+                    <span class="yt-music-pill">
+                        <span class="yt-music-pill-dot" aria-hidden="true"></span>
+                        <span class="yt-music-status-text">Buffering Beat…</span>
+                    </span>
+                    <span class="yt-music-timer">0:00 / ${fmtTime(clipLength)}</span>
+                </div>
+                <p class="yt-music-prompt">🎵 Listen closely to the beat!</p>
+                <p class="yt-music-subtext">Autoplaying intro beat &bull; Stops automatically before lyrics</p>
+
+                <div class="yt-music-eq" aria-hidden="true">${bars}</div>
+
+                <div class="yt-music-progress-bar" aria-hidden="true">
+                    <div class="yt-music-progress-fill"></div>
+                </div>
+
+                <div class="yt-music-controls">
+                    <button type="button" class="yt-music-btn yt-music-btn--primary yt-music-btn-replay">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Replay Beat
+                    </button>
+                    <button type="button" class="yt-music-btn yt-music-btn--secondary yt-music-btn-toggle-play">
+                        <span class="yt-play-icon">${ICONS.play}</span>
+                        <span class="yt-pause-icon">${ICONS.pause}</span>
+                        <span class="yt-toggle-label">Loading…</span>
+                    </button>
+                    <button type="button" class="yt-music-btn yt-music-btn--secondary yt-music-btn-peek" title="Toggle video peek for host">
+                        <span class="peek-icon">👁️</span>
+                        <span class="peek-label">Peek Video</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="yt-music-video-wrap">
+                <iframe src="https://www.youtube.com/embed/${id}?${params}" title="YouTube video audio" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+        `;
+
         if (location.protocol === 'file:') {
             wrap.appendChild(errorNote('YouTube needs the game served over http — run: python3 -m http.server 8000', 'media-note'));
         }
+
+        const iframe = wrap.querySelector('iframe');
+        const statusText = wrap.querySelector('.yt-music-status-text');
+        const timerEl = wrap.querySelector('.yt-music-timer');
+        const progressFill = wrap.querySelector('.yt-music-progress-fill');
+        const replayBtn = wrap.querySelector('.yt-music-btn-replay');
+        const toggleBtn = wrap.querySelector('.yt-music-btn-toggle-play');
+        const toggleLabel = wrap.querySelector('.yt-toggle-label');
+        const peekBtn = wrap.querySelector('.yt-music-btn-peek');
+        const peekLabel = wrap.querySelector('.peek-label');
+
+        let elapsed = 0;
+        let isPlaying = false;
+        let ticker = null;
+        let hasStartedPlaying = false;
+
+        const sendCmd = (func, args = []) => {
+            try {
+                iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
+            } catch {}
+        };
+
+        const registerListening = () => {
+            try {
+                iframe.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1 }), '*');
+            } catch {}
+        };
+
+        iframe.addEventListener('load', () => {
+            registerListening();
+            sendCmd('playVideo');
+        });
+        setTimeout(registerListening, 250);
+        setTimeout(registerListening, 650);
+        setTimeout(registerListening, 1200);
+
+        const stopPlayback = () => {
+            sendCmd('pauseVideo');
+            isPlaying = false;
+            wrap.dataset.state = 'finished';
+            statusText.textContent = 'Beat Finished 🎶';
+            toggleLabel.textContent = 'Play';
+            progressFill.style.width = '100%';
+            timerEl.textContent = `${fmtTime(clipLength)} / ${fmtTime(clipLength)}`;
+            stopTicker();
+        };
+
+        const startTicker = () => {
+            stopTicker();
+            ticker = setInterval(() => {
+                if (!isPlaying || wrap.dataset.state !== 'playing') return;
+                elapsed += 0.1;
+                const ratio = Math.min(elapsed / clipLength, 1);
+                progressFill.style.width = `${ratio * 100}%`;
+                timerEl.textContent = `${fmtTime(Math.min(elapsed, clipLength))} / ${fmtTime(clipLength)}`;
+                if (elapsed >= clipLength) {
+                    stopPlayback();
+                }
+            }, 100);
+        };
+
+        const stopTicker = () => {
+            if (ticker) {
+                clearInterval(ticker);
+                ticker = null;
+            }
+        };
+
+        const beginActivePlaying = () => {
+            if (wrap.dataset.state === 'finished') return;
+            hasStartedPlaying = true;
+            isPlaying = true;
+            wrap.dataset.state = 'playing';
+            statusText.textContent = 'Playing Beat';
+            toggleLabel.textContent = 'Pause';
+            startTicker();
+        };
+
+        // Handle YouTube player state and position messages
+        const onMessage = (e) => {
+            if (e.source !== iframe.contentWindow) return;
+            let msg;
+            try { msg = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch { return; }
+            if (!msg) return;
+
+            let state = null;
+            let curTime = null;
+
+            if (msg.event === 'onStateChange') {
+                state = msg.info;
+            } else if (msg.event === 'infoDelivery' && msg.info) {
+                if (typeof msg.info.playerState !== 'undefined') state = msg.info.playerState;
+                if (typeof msg.info.currentTime === 'number') curTime = msg.info.currentTime;
+            }
+
+            // Player State: 1 = PLAYING, 2 = PAUSED, 0 = ENDED, 3 = BUFFERING
+            if (state === 3) { // BUFFERING: Keep timer paused at 0
+                if (wrap.dataset.state !== 'finished' && !hasStartedPlaying) {
+                    wrap.dataset.state = 'buffering';
+                    statusText.textContent = 'Buffering Beat…';
+                    toggleLabel.textContent = 'Loading…';
+                    stopTicker();
+                }
+            } else if (state === 1) { // SOUND IS ACTUALLY PLAYING!
+                beginActivePlaying();
+            } else if (state === 2) { // PAUSED
+                if (wrap.dataset.state !== 'finished') {
+                    isPlaying = false;
+                    wrap.dataset.state = 'paused';
+                    statusText.textContent = 'Beat Paused';
+                    toggleLabel.textContent = 'Play';
+                    stopTicker();
+                }
+            } else if (state === 0) { // ENDED
+                stopPlayback();
+            }
+
+            // Synchronize with exact player position if provided by YouTube
+            if (curTime != null && isPlaying && wrap.dataset.state === 'playing') {
+                const pos = Math.max(0, curTime - start);
+                elapsed = pos;
+                const ratio = Math.min(pos / clipLength, 1);
+                progressFill.style.width = `${ratio * 100}%`;
+                timerEl.textContent = `${fmtTime(Math.min(pos, clipLength))} / ${fmtTime(clipLength)}`;
+                if (curTime >= end || pos >= clipLength) {
+                    stopPlayback();
+                }
+            }
+        };
+        window.addEventListener('message', onMessage);
+
+        // Fallback: If after 3.2s YouTube message wasn't received (e.g. strict origin restrictions),
+        // let the player transition so the user can play or hear it
+        const fallbackWatchdog = setTimeout(() => {
+            if (!hasStartedPlaying && wrap.dataset.state === 'buffering') {
+                sendCmd('playVideo');
+                beginActivePlaying();
+            }
+        }, 3200);
+
+        replayBtn.addEventListener('click', () => {
+            elapsed = 0;
+            isPlaying = true;
+            hasStartedPlaying = true;
+            wrap.dataset.state = 'playing';
+            statusText.textContent = 'Playing Beat';
+            toggleLabel.textContent = 'Pause';
+            progressFill.style.width = '0%';
+            timerEl.textContent = `0:00 / ${fmtTime(clipLength)}`;
+            sendCmd('seekTo', [start, true]);
+            sendCmd('playVideo');
+            startTicker();
+        });
+
+        toggleBtn.addEventListener('click', () => {
+            if (isPlaying && wrap.dataset.state === 'playing') {
+                sendCmd('pauseVideo');
+                isPlaying = false;
+                wrap.dataset.state = 'paused';
+                statusText.textContent = 'Beat Paused';
+                toggleLabel.textContent = 'Play';
+                stopTicker();
+            } else {
+                if (elapsed >= clipLength) {
+                    elapsed = 0;
+                    sendCmd('seekTo', [start, true]);
+                }
+                sendCmd('playVideo');
+                isPlaying = true;
+                hasStartedPlaying = true;
+                wrap.dataset.state = 'playing';
+                statusText.textContent = 'Playing Beat';
+                toggleLabel.textContent = 'Pause';
+                startTicker();
+            }
+        });
+
+        peekBtn.addEventListener('click', () => {
+            const isBlind = wrap.dataset.blind === 'true';
+            wrap.dataset.blind = isBlind ? 'false' : 'true';
+            peekLabel.textContent = isBlind ? 'Hide Video' : 'Peek Video';
+        });
+
+        wrap.dataset.cleanup = 'true';
+        wrap._cleanup = () => {
+            clearTimeout(fallbackWatchdog);
+            stopTicker();
+            window.removeEventListener('message', onMessage);
+        };
+
         return wrap;
     }
 
@@ -265,7 +531,7 @@
         if (data[f.image]) nodes.push(buildImage(data[f.image], altText));
         if (data[f.audio]) nodes.push(buildAudio(data[f.audio], clip));
         if (data[f.video]) nodes.push(buildVideo(data[f.video], clip, which === 'question' ? data.poster : data.answerPoster));
-        if (data[f.youtube]) nodes.push(buildYouTube(data[f.youtube], clip));
+        if (data[f.youtube]) nodes.push(buildYouTube(data[f.youtube], clip, data, which, altText));
         if (data[f.embed]) nodes.push(buildEmbed(data[f.embed]));
         nodes.forEach((n) => slot.appendChild(n));
         return nodes.length > 0;
@@ -279,20 +545,83 @@
             m.removeAttribute('src');
             m.load();
         });
+        slot.querySelectorAll('iframe').forEach((iframe) => {
+            try {
+                iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*');
+            } catch {}
+            iframe.removeAttribute('src');
+        });
+        slot.querySelectorAll('[data-cleanup]').forEach((el) => {
+            if (typeof el._cleanup === 'function') el._cleanup();
+        });
         slot.innerHTML = '';
     }
 
     function pauseAll(root) {
+        if (!root) return;
         root.querySelectorAll('audio, video').forEach((m) => m.pause());
+        root.querySelectorAll('iframe').forEach((iframe) => {
+            try {
+                iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*');
+            } catch {}
+        });
+        root.querySelectorAll('.yt-music-player').forEach((p) => {
+            p.dataset.state = 'paused';
+            const status = p.querySelector('.yt-music-status-text');
+            if (status && status.textContent === 'Playing Beat') status.textContent = 'Beat Paused';
+            const toggle = p.querySelector('.yt-toggle-label');
+            if (toggle) toggle.textContent = 'Play';
+        });
     }
 
-    /** Toggle the first playable <audio>/<video> inside root (keyboard shortcut). */
+    /** Reveal video when answer is shown */
+    function onAnswerRevealed(root, data) {
+        if (!root) return;
+        const ytPlayer = root.querySelector('.yt-music-player');
+        if (ytPlayer) {
+            ytPlayer.dataset.blind = 'false';
+            ytPlayer.classList.add('is-revealed');
+            const peekBtn = ytPlayer.querySelector('.yt-music-btn-peek');
+            if (peekBtn) peekBtn.hidden = true;
+            const statusText = ytPlayer.querySelector('.yt-music-status-text');
+            if (statusText) statusText.textContent = 'Answer Revealed 🎵';
+            const subtext = ytPlayer.querySelector('.yt-music-subtext');
+            if (subtext) subtext.textContent = 'Official track revealed! Click below to jam to the full song with lyrics!';
+            let fullBtn = ytPlayer.querySelector('.yt-music-btn-full');
+            if (!fullBtn) {
+                fullBtn = document.createElement('button');
+                fullBtn.type = 'button';
+                fullBtn.className = 'yt-music-btn yt-music-btn--primary yt-music-btn-full';
+                fullBtn.innerHTML = '▶ Play Full Song with Lyrics';
+                const iframe = ytPlayer.querySelector('iframe');
+                fullBtn.addEventListener('click', () => {
+                    if (iframe && iframe.contentWindow) {
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }), '*');
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
+                    }
+                    ytPlayer.dataset.state = 'playing';
+                    if (statusText) statusText.textContent = 'Playing Full Song 🎶';
+                });
+                ytPlayer.querySelector('.yt-music-controls')?.prepend(fullBtn);
+            }
+        }
+    }
+
+    /** Toggle the first playable media inside root (keyboard shortcut). */
     function togglePrimary(root) {
+        if (!root) return false;
         const media = [...root.querySelectorAll('audio, video')].find((m) => m.offsetParent !== null || m.tagName === 'AUDIO');
-        if (!media) return false;
-        if (media.paused) media.play().catch(() => {});
-        else media.pause();
-        return true;
+        if (media) {
+            if (media.paused) media.play().catch(() => {});
+            else media.pause();
+            return true;
+        }
+        const ytToggle = root.querySelector('.yt-music-btn-toggle-play');
+        if (ytToggle) {
+            ytToggle.click();
+            return true;
+        }
+        return false;
     }
 
     /** Only one clip plays at a time inside root. */
@@ -304,5 +633,5 @@
         }, true);
     }
 
-    window.JeopardyMedia = { render, clear, pauseAll, togglePrimary, exclusivePlayback, kindsFor, isWide, ICONS };
+    window.JeopardyMedia = { render, clear, pauseAll, togglePrimary, exclusivePlayback, kindsFor, isWide, ICONS, onAnswerRevealed };
 })();

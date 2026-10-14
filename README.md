@@ -183,7 +183,7 @@ Play an MP4 or WebM video inside an expansive, responsive 16:9 Diwali player:
 
 ### 3. Embedding YouTube Videos & Shorts
 
-Paste **any standard YouTube URL**, short URL, or Shorts link. The player automatically sets up the embed and handles start/end timestamps:
+Paste **any standard YouTube URL**, short URL, or Shorts link. The player automatically sets up the embed and handles start/end timestamps and autoplay:
 
 ```javascript
 "Chronically online": {
@@ -194,6 +194,23 @@ Paste **any standard YouTube URL**, short URL, or Shorts link. The player automa
         end: 55,   // Ends at 0:55
         hint: "Never gonna...",
         answer: "What is Never Gonna Give You Up"
+    }
+}
+```
+
+#### 🎵 Music Beat Clues (Anti-Spoiler "Sangeet" Mode)
+For music categories (like **"Sangeet vangeet"**) where contestants must guess the song from the intro beat, add `isAudio: true`. The player autoplays the beat snippet with an animated Diwali equalizer and live countdown while masking video titles/spoilers during the question. When the answer is revealed, the video unmasks and contestants can enjoy the full song:
+
+```javascript
+"Sangeet vangeet": {
+    100: {
+        question: "🎵 Listen to the beat and name that song / movie!",
+        youtube: "https://youtu.be/fzv1uqd_1v8?si=VQxhZGtn0_i-VTo3",
+        start: 0,
+        end: 4,         // Stops at second 4, right before lyrics
+        isAudio: true,  // Displays festive Diwali beat player & audio badge
+        hint: "Title track of Imran Khan & Sonam Kapoor rom-com",
+        answer: "what is i hate luv storys"
     }
 }
 ```

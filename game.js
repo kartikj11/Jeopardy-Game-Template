@@ -235,6 +235,7 @@
         if (questionData) {
             const hasAnswerMedia = Media.render(els.answerMedia, questionData, 'answer', `Answer: ${questionData.answer}`);
             if (hasAnswerMedia) Media.pauseAll(els.questionMedia);
+            else Media.onAnswerRevealed?.(els.questionMedia, questionData);
         }
         els.answerContent.hidden = false;
         els.revealBtn.hidden = true;

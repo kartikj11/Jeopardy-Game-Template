@@ -43,34 +43,48 @@ const gameData = {
     "Sangeet vangeet": {
         100: {
             question: "🎵 Listen to the beat and name that song / movie!",
+            youtube: "https://youtu.be/fzv1uqd_1v8?si=VQxhZGtn0_i-VTo3",
+            start: 0,
+            end: 4,
+            isAudio: true,
             hint: "Title track of Imran Khan & Sonam Kapoor rom-com",
             answer: "what is i hate luv storys"
-            // audio: "media/sangeet1.mp3",
-            // youtube: "https://www.youtube.com/watch?v=...",
         },
         200: {
             question: "🎵 Listen to the beat and name that song / movie!",
+            youtube: "https://youtu.be/ANX4UZlW2JA?si=IptjS16bOEsaptGg",
+            start: 0,
+            end: 8,
+            isAudio: true,
             hint: "Sufi-thumri club banger from JugJugg Jeeyo",
             answer: "what is Rangisari"
-            // audio: "media/sangeet2.mp3",
         },
         300: {
             question: "🎵 Listen to the beat and name that song / movie!",
+            youtube: "https://youtu.be/OF688uk3Il0?si=WRJpTSZaTRQHfGVD",
+            start: 0,
+            end: 8,
+            isAudio: true,
             hint: "Iconic A.R. Rahman youth anthem from Rang De Basanti",
             answer: "what is Roobaroo"
-            // audio: "media/sangeet3.mp3",
         },
         400: {
             question: "🎵 Listen to the beat and name that song / movie!",
-            hint: "Arijit Singh track from Singham Returns",
+            youtube: "https://youtu.be/6HUYAfCB728?si=JeglT95NyDAO73dL",
+            start: 0,
+            end: 8,
+            isAudio: true,
+            hint: "Arijit Singh track from Holiday (Akshay Kumar & Sonakshi Sinha)",
             answer: "what is Aaj Dil Shayrana"
-            // audio: "media/sangeet4.mp3",
         },
         500: {
             question: "🎵 Listen to the beat and name that song / movie!",
+            youtube: "https://youtu.be/ofTxceS4wLI?si=Y_mAzkY6XnHYEhhU",
+            start: 0,
+            end: 7,
+            isAudio: true,
             hint: "Soulful track from OK Jaanu composed by A.R. Rahman",
             answer: "what is Enna Sona"
-            // audio: "media/sangeet5.mp3",
         }
     },
 
