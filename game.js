@@ -723,7 +723,7 @@
         document.addEventListener('keydown', (e) => {
             if (!els.modal.open || e.metaKey || e.ctrlKey || e.altKey) return;
             const active = document.activeElement;
-            if (e.key === 'p' || e.key === 'P') {
+            if (e.key === 'p' || e.key === 'P' || e.key === 'r' || e.key === 'R') {
                 if (active && active.tagName === 'INPUT' && active.type === 'text') return;
                 if (Media.togglePrimary(els.modalContent)) e.preventDefault();
                 return;

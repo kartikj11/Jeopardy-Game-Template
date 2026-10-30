@@ -52,12 +52,13 @@ const gameData = {
         },
         200: {
             question: "🎵 Listen to the beat and name that song / movie!",
-            youtube: "https://youtu.be/ANX4UZlW2JA?si=IptjS16bOEsaptGg",
+            youtube: "https://youtu.be/jY8mAWdQFOA", // Exact official video of the Spotify single (better intro)
             start: 0,
-            end: 8,
+            end: 11, // Plays the iconic intro beat and stops right before lyrics
             isAudio: true,
-            hint: "Sufi-thumri club banger from JugJugg Jeeyo",
-            answer: "what is Rangisari"
+            hint: "Sufi-thumri viral single by Kavita Seth & Kanishk Seth (also in JugJugg Jeeyo)",
+            answer: "what is Rangisari",
+            answerSpotify: "https://open.spotify.com/track/3F2BSn4ayglzMwquBRHZq6?si=6c0e764cd3f04094"
         },
         300: {
             question: "🎵 Listen to the beat and name that song / movie!",
@@ -91,34 +92,28 @@ const gameData = {
     "Chronically online": {
         100: {
             question: "Name this viral internet meme / soundbite!",
-            hint: '"Wait a minute... who are you?"',
-            answer: 'What is Kazoo Kid ("Who are you?") 🎺'
-            // video: "media/kazookid.mp4",
-            // youtube: "https://www.youtube.com/watch?v=...",
+            answer: 'What is Kazoo Kid ("Who are you?") 🎺',
+            image: "media/kazoo.png",
         },
         200: {
-            question: "Which weighs more: a kilogram of steel, or a kilogram of feathers?",
-            hint: "Think carefully before answering...",
-            answer: "What is a kilogram of steel or a kilogram of feathers (they weigh the same!)"
-            // youtube: "https://www.youtube.com/watch?v=...",
+            question: "Name this viral internet meme / soundbite!",
+            answer: "What is a kilogram of steel or a kilogram of feathers (they weigh the same!)",
+            image: "media/kilogram.png",
         },
         300: {
-            question: "Complete the iconic meme / reaction: 'Maaf karna gusse mein thoda idhar udhar nikal jata hoon...' / '_____!'",
-            hint: "Viral Pakistani interview reaction",
-            answer: "What is Abbey Saale! ('Abey saale... maaf karna gusse mein thoda idhar udhar nikal jata hoon!')"
-            // youtube: "https://www.youtube.com/watch?v=...",
+            question: "Name this viral internet meme / soundbite!",
+            answer: "What is Abbey Saale! ('Abey saale... maaf karna gusse mein thoda idhar udhar nikal jata hoon!')",
+            image: "media/abe_saale.png",
         },
         400: {
-            question: "Name this viral internet quote / meme from an upset kid being filmed on the street!",
-            hint: '"...I\'ve got school!"',
-            answer: "What is 'It's not funny, I've got school!' 🎒"
-            // youtube: "https://www.youtube.com/watch?v=...",
+            question: "Name this viral internet meme / soundbite!",
+            answer: "What is 'It's not funny, I've got school!' 🎒",
+            image: "media/skool.png",
         },
         500: {
-            question: "Name this legendary internet meme of a toddler on a beach making a determined fist pump with sand in his hand.",
-            hint: "Viral victory meme",
-            answer: "What is Success Kid ✊"
-            // image: "media/success_kid.jpg",
+            question: "Name this viral internet meme / soundbite!",
+            answer: "What is Success Kid ✊",
+            image: "media/success.png",
         }
     },
 
@@ -126,33 +121,45 @@ const gameData = {
         100: {
             question: "Name the movie featuring this iconic Bollywood main character moment / scene!",
             hint: "High-octane action thriller starring Hrithik Roshan & Aishwarya Rai",
-            answer: "What is Dhoom 2 🏍️"
+            answer: "What is Dhoom 2 🏍️",
             // video: "media/dhoom2.mp4",
-            // youtube: "https://www.youtube.com/watch?v=...",
+            youtube: "https://youtu.be/qno6XZbCa8g", // quiz video Q10
+            start: 106,
+            end: 111,
         },
         200: {
             question: "Name the movie featuring this dramatic main character energy scene!",
             hint: "Starring Shah Rukh Khan, Rani Mukerji, Preity Zinta, Abhishek Bachchan",
-            answer: "What is Kabhi Alvida Naa Kehna 🎬"
+            answer: "What is Kabhi Alvida Naa Kehna 🎬",
             // video: "media/kank.mp4",
+            youtube: "https://youtu.be/qno6XZbCa8g", // quiz video Q6
+            start: 62,
+            end: 67,
         },
         300: {
             question: "Name the movie featuring this iconic main character moment!",
             hint: "Rohit & Jadoo 👽",
-            answer: "What is Koi... Mil Gaya 🛸"
+            answer: "What is Koi... Mil Gaya 🛸",
             // video: "media/koimilgaya.mp4",
+            youtube: "https://youtu.be/qno6XZbCa8g", // quiz video Q26
+            start: 278,
+            end: 283,
         },
         400: {
-            question: "Name the movie featuring this ambitious Delhi wedding-planning duo!",
-            hint: "Bittoo Sharma & Shruti Kakkar",
-            answer: "What is Band Baaja Baaraat 🎪"
-            // video: "media/bbb.mp4",
-        },
-        500: {
             question: "Name the movie featuring this suave conman who tricks women until they team up for revenge!",
             hint: "Starring Ranveer Singh & Anushka Sharma",
-            answer: "What is Ladies vs Ricky Bahl 💼"
-            // video: "media/rickybahl.mp4",
+            answer: "What is Ladies vs Ricky Bahl 💼",
+            youtube: "https://youtu.be/NBZ34hKUiMA",
+            start: 15,  // <-- Adjust start timestamp (in seconds)
+            end: 22,   // <-- Adjust end timestamp (in seconds)
+        },
+        500: {
+            question: "Name this classic Bollywood movie featuring an earnest dreamer trying to win his crush's heart!",
+            hint: "Starring Shah Rukh Khan as Sunil with Suchitra Krishnamoorthi",
+            answer: "What is Kabhi Haan Kabhi Naa 🎸",
+            youtube: "https://youtu.be/KQcTYPw_cTg",
+            start: 0,   // <-- Adjust start timestamp (in seconds)
+            end: 7,    // <-- Adjust end timestamp (in seconds)
         }
     },
 
